@@ -3,8 +3,7 @@ import { tsImport } from 'ts-import';
 import { createRequire } from 'module';
 import * as module from 'module';
 
-import { readdir } from 'fs/promises';
-import { readFileSync, Dirent } from 'fs';
+import { readFileSync, readdirSync, Dirent } from 'fs';
 
 import path from 'path';
 
@@ -59,21 +58,19 @@ interface options {
   fileNameResolver?: ModuleNameResolver;
 }
 
-export const generateFilesPaths = async (
+export const generateFilesPaths = (
   srcPath: string,
   { extensions, fileNameResolver }: options,
-): Promise<string[]> => {
-  const entries: Dirent[] = await readdir(srcPath, { withFileTypes: true });
+): string[] => {
+  const entries: Dirent[] = readdirSync(srcPath, { withFileTypes: true });
 
-  const files = await Promise.all(
-    entries.map(async (dirent: Dirent): Promise<string | string[]> => {
-      const nextPath: string = path.resolve(srcPath, dirent.name);
+  const files = entries.map(async (dirent: Dirent): Promise<string | string[]> => {
+    const nextPath: string = path.resolve(srcPath, dirent.name);
 
-      return dirent.isDirectory()
-        ? generateFilesPaths(nextPath, { extensions, fileNameResolver })
-        : nextPath;
-    }),
-  );
+    return dirent.isDirectory()
+      ? generateFilesPaths(nextPath, { extensions, fileNameResolver })
+      : nextPath;
+  })
 
   return Array.prototype.concat(...files).filter((v) => {
     const name = path.basename(v);
